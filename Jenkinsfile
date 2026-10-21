@@ -40,25 +40,34 @@ pipeline {
         }
 
 
-        stage('Login to AWS ECR') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'aws-ecr-credentials',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID',
-                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                    )
-                ]) {
-                    sh '''
-                        set +x
-                        export AWS_DEFAULT_REGION="$AWS_REGION"
-                        aws ecr get-login-password --region "$AWS_REGION" |
-                        docker login --username AWS --password-stdin \
-                            772498066230.dkr.ecr.ap-south-1.amazonaws.com
-                    '''
-                }
-            }
+        
+stage('Login to AWS ECR') {
+    steps {
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'aws-ecr-credentials',
+                usernameVariable: 'AWS_ACCESS_KEY_ID',
+                passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+            )
+        ]) {
+            sh '''
+                set +x
+                docker run --rm \
+                    -e AWS_ACCESS_KEY_ID \
+                    -e AWS_SECRET_ACCESS_KEY \
+                    -e AWS_DEFAULT_REGION="$AWS_REGION" \
+                    amazon/aws-cli:latest \
+                    ecr get-login-password \
+                    --region "$AWS_REGION" |
+                docker login \
+                    --username AWS \
+                    --password-stdin \
+                    772498066230.dkr.ecr.ap-south-1.amazonaws.com
+            '''
         }
+    }
+}
+
 
         stage('Push Image to ECR') {
             steps {
