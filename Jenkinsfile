@@ -22,19 +22,23 @@ pipeline {
             }
         }
 
+        
         stage('Test Flask App') {
             steps {
                 sh '''
                     docker rm -f student-service-test 2>/dev/null || true
-                    docker run -d --name student-service-test \
-                        -p 5001:5000 student-service:latest
+                    docker run -d --name student-service-test student-service:latest
+                    sleep 3
 
-                    sleep 5
-                    curl -f http://localhost:5001/
-                    curl -f http://localhost:5001/student
+                    docker exec student-service-test python -c \
+                    "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:5000/').read().decode())"
+
+                    docker exec student-service-test python -c \
+                    "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:5000/student').read().decode())"
                 '''
             }
         }
+
 
         stage('Login to AWS ECR') {
             steps {
